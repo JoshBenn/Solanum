@@ -10,6 +10,7 @@
     <file alias="kitchen_timer_ring.ogg">sounds/org.gnome.Solanum-kitchen_timer_ring.ogg</file>
     <file alias="kitchen_timer_start.ogg">sounds/org.gnome.Solanum-kitchen_timer_start.ogg</file>
     <file alias="kitchen_timer_tick_5s.ogg">sounds/org.gnome.Solanum-kitchen_timer_tick_5s.ogg</file>
+    <file alias="nothing.ogg">sounds/org.gnome.Solanum-nothing.ogg</file>
     <file alias="@APP_ID@.appdata.xml">@APP_ID@.appdata.xml</file>
   </gresource>
 </gresources>

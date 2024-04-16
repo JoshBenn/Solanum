@@ -37,11 +37,51 @@ use crate::config;
 use crate::i18n::*;
 use crate::timer::Timer;
 
+pub enum StartSound {
+    Default,
+    Kitchen,
+}
+impl std::fmt::Display for StartSound {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Default => write!(f, "resource:///org/gnome/Solanum/beep.ogg"),
+            Self::Kitchen => write!(f, "resource:///org/gnome/Solanum/kitchen_timer_start.ogg"),
+        }
+    }
+}
+
+pub enum EndSound {
+    Default,
+    Kitchen,
+}
+impl std::fmt::Display for EndSound {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Default => write!(f, "resource:///org/gnome/Solanum/chime.ogg"),
+            Self::Kitchen => write!(f, "resource:///org/gnome/Solanum/kitchen_timer_ring.ogg"),
+        }
+    }
+}
+
+pub enum RunningSound {
+    Default,
+    Kitchen,
+}
+impl std::fmt::Display for RunningSound {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Default => write!(f, "resource:///org/gnome/Solanum/nothing.ogg"),
+            Self::Kitchen => write!(f, "resource:///org/gnome/Solanum/kitchen_timer_tick_5s.ogg"),
+        }
+    }
+}
+
 static DEFAULT_CHIME_URI: &str = "resource:///org/gnome/Solanum/chime.ogg";
 static DEFAULT_BEEP_URI: &str = "resource:///org/gnome/Solanum/beep.ogg";
 static KITCHEN_TIMER: &str = "resource:///org/gnome/Solanum/kitchen_timer_tick_5s.ogg";
 static KITCHEN_BEEP_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_start.ogg";
 static KITCHEN_CHIME_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_ring.ogg";
+static NOTHING: &str = "resource:///org/gnome/Solanum/nothing.ogg";
 
 static mut GLOBAL: u32 = 0;
 
@@ -69,8 +109,6 @@ mod imp {
         pub timer: Timer,
         pub player: gstreamer_play::Play,
         pub lap_type: Cell<LapType>,
-        pub timeout: bool,
-        pub timestamp: u32,
 
         #[template_child]
         pub lap_label: TemplateChild<gtk::Label>,
@@ -98,8 +136,6 @@ mod imp {
                 timer_label: TemplateChild::default(),
                 timer_button: TemplateChild::default(),
                 menu_button: TemplateChild::default(),
-                timeout: false,
-                timestamp: 0,
             }
         }
 
@@ -208,13 +244,15 @@ impl SolanumWindow {
         let imp = self.imp();
         let label = &*imp.timer_label;
         label.set_label(&format!("{:>02}∶{:>02}", min, sec));
-                                                   // <----- Make this better
-        if unsafe { GLOBAL != sec } && sec % 5 == 3  {
+        let uri = imp.player.uri().unwrap_or_default();
+
+        if uri == NOTHING || (unsafe { GLOBAL != sec } && sec % 5 == 3)  {   // <----- Make this better
             let app = self.application();
             let settings = app.gsettings();
             if settings.boolean("switch-timer-sounds") {
                 self.play_sound(KITCHEN_TIMER);
                 println!("Playing sound");
+                println!("{:?}", imp.player.position());
                 unsafe {
                     GLOBAL = sec
                 }
@@ -272,13 +310,24 @@ impl SolanumWindow {
 
         if start_timer {
             imp.timer.start();
-            self.play_sound(if settings.boolean("switch-timer-sounds") {KITCHEN_BEEP_URI} else {DEFAULT_BEEP_URI});
+            let uri = imp.player.uri().unwrap_or_default();
+            if uri != NOTHING {
+                self.play_sound(
+                    if settings.boolean("switch-timer-sounds") {
+                        KITCHEN_BEEP_URI
+                    } else {
+                        DEFAULT_BEEP_URI
+                    }
+                );
+            }
+
             imp.timer_button
                 .set_icon_name("media-playback-pause-symbolic");
             imp.timer_label.remove_css_class("blinking");
             imp.timer_button.remove_css_class("suggested-action");
         } else {
             imp.timer.stop();
+            self.play_sound(NOTHING);
             imp.timer_button
                 .set_icon_name("media-playback-start-symbolic");
             imp.timer_label.add_css_class("blinking");
