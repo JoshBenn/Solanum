@@ -37,45 +37,6 @@ use crate::config;
 use crate::i18n::*;
 use crate::timer::Timer;
 
-pub enum StartSound {
-    Default,
-    Kitchen,
-}
-impl std::fmt::Display for StartSound {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Default => write!(f, "resource:///org/gnome/Solanum/beep.ogg"),
-            Self::Kitchen => write!(f, "resource:///org/gnome/Solanum/kitchen_timer_start.ogg"),
-        }
-    }
-}
-
-pub enum EndSound {
-    Default,
-    Kitchen,
-}
-impl std::fmt::Display for EndSound {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Default => write!(f, "resource:///org/gnome/Solanum/chime.ogg"),
-            Self::Kitchen => write!(f, "resource:///org/gnome/Solanum/kitchen_timer_ring.ogg"),
-        }
-    }
-}
-
-pub enum RunningSound {
-    Default,
-    Kitchen,
-}
-impl std::fmt::Display for RunningSound {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Default => write!(f, "resource:///org/gnome/Solanum/nothing.ogg"),
-            Self::Kitchen => write!(f, "resource:///org/gnome/Solanum/kitchen_timer_tick_5s.ogg"),
-        }
-    }
-}
-
 static DEFAULT_CHIME_URI: &str = "resource:///org/gnome/Solanum/chime.ogg";
 static DEFAULT_BEEP_URI: &str = "resource:///org/gnome/Solanum/beep.ogg";
 static KITCHEN_TIMER: &str = "resource:///org/gnome/Solanum/kitchen_timer_tick_5s.ogg";
@@ -83,7 +44,8 @@ static KITCHEN_BEEP_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_sta
 static KITCHEN_CHIME_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_ring.ogg";
 static NOTHING: &str = "resource:///org/gnome/Solanum/nothing.ogg";
 
-static mut GLOBAL: u32 = 0;
+// Tracks the last time the sound was played
+static mut TIMESTAMP: u32 = 0;
 
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Enum)]
@@ -246,7 +208,7 @@ impl SolanumWindow {
         label.set_label(&format!("{:>02}∶{:>02}", min, sec));
         let uri = imp.player.uri().unwrap_or_default();
 
-        if uri == NOTHING || (unsafe { GLOBAL != sec } && sec % 5 == 3)  {   // <----- Make this better
+        if uri == NOTHING || (unsafe { TIMESTAMP != sec } && sec % 5 == 3)  {   // <----- Make this better
             let app = self.application();
             let settings = app.gsettings();
             if settings.boolean("switch-timer-sounds") {
@@ -254,9 +216,9 @@ impl SolanumWindow {
                 println!("Playing sound");
                 println!("{:?}", imp.player.position());
                 unsafe {
-                    GLOBAL = sec
+                    TIMESTAMP = sec
                 }
-            }                                            // Add the ticking sound
+            }
         }
 
         glib::ControlFlow::Continue
@@ -345,6 +307,7 @@ impl SolanumWindow {
 
         // Reset the user interface to the stopped state.
         imp.timer.stop();
+        imp.player.stop();
         imp.timer_button
             .set_icon_name("media-playback-start-symbolic");
         imp.timer_label.add_css_class("blinking");
