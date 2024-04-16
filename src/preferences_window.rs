@@ -96,6 +96,7 @@ impl SolanumPreferencesWindow {
                 "value",
             )
             .build();
+                settings.bind("switch-timer-sounds", &*imp.switch_timer_sounds, "active").build();
 
         obj
     }

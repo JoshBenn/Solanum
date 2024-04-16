@@ -7,6 +7,9 @@
     <file>gtk/help-overlay.ui</file>
     <file alias="chime.ogg">sounds/org.gnome.Solanum-chime.ogg</file>
     <file alias="beep.ogg">sounds/org.gnome.Solanum-beep.ogg</file>
+    <file alias="kitchen_timer_ring.ogg">sounds/org.gnome.Solanum-kitchen_timer_ring.ogg</file>
+    <file alias="kitchen_timer_start.ogg">sounds/org.gnome.Solanum-kitchen_timer_start.ogg</file>
+    <file alias="kitchen_timer_tick_5s.ogg">sounds/org.gnome.Solanum-kitchen_timer_tick_5s.ogg</file>
     <file alias="@APP_ID@.appdata.xml">@APP_ID@.appdata.xml</file>
   </gresource>
 </gresources>

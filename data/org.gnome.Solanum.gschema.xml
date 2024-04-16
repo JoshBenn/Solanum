@@ -17,5 +17,9 @@
       <default>4</default>
       <summary>The number of sessions until a long break.</summary>
     </key>
+    <key name="switch-timer-sounds" type="b">
+      <default>false</default>
+      <summary>Toggles between digital and analog timer sounds.</summary>
+    </key>
   </schema>
 </schemalist>

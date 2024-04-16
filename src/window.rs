@@ -37,9 +37,12 @@ use crate::config;
 use crate::i18n::*;
 use crate::timer::Timer;
 
-static CHIME_URI: &str = "resource:///org/gnome/Solanum/chime.ogg";
-static BEEP_URI: &str = "resource:///org/gnome/Solanum/beep.ogg";
-static KITCHEN_TIMER: &str = "";
+static DEFAULT_CHIME_URI: &str = "resource:///org/gnome/Solanum/chime.ogg";
+static DEFAULT_BEEP_URI: &str = "resource:///org/gnome/Solanum/beep.ogg";
+static KITCHEN_TIMER: &str = "resource:///org/gnome/Solanum/kitchen_timer_tick_5s.ogg";
+static KITCHEN_BEEP_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_start.ogg";
+static KITCHEN_CHIME_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_ring.ogg";
+
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Enum)]
 #[enum_type(name = "SolanumLapType")]
@@ -202,7 +205,7 @@ impl SolanumWindow {
 
         let app = self.application();
         let settings = app.gsettings();                                                      // <----- Make this better
-        if settings.boolean("switch_timer_sounds") {
+        if settings.boolean("switch-timer-sounds") && sec % 5 == 0 {
             self.play_sound(KITCHEN_TIMER);                                                  // Add the ticking sound
         }
 
@@ -249,13 +252,15 @@ impl SolanumWindow {
     // Callback to run whenever the timer is toggled - by button or action
     fn toggle_timer(&self) {
         let imp = self.imp();
+        let app = self.application();
+        let settings = app.gsettings();
 
         let start_timer = !imp.timer.running();
         self.action_set_enabled("win.skip", !start_timer);
 
         if start_timer {
             imp.timer.start();
-            self.play_sound(BEEP_URI);
+            self.play_sound(if settings.boolean("switch-timer-sounds") {KITCHEN_BEEP_URI} else {DEFAULT_BEEP_URI});
             imp.timer_button
                 .set_icon_name("media-playback-pause-symbolic");
             imp.timer_label.remove_css_class("blinking");
@@ -304,6 +309,8 @@ impl SolanumWindow {
     }
 
     fn send_notifcation(&self, lap_type: LapType) {
+        let app = self.application();
+        let settings = app.gsettings();
         if !self.is_active() {
             let notif = gio::Notification::new(&i18n("Solanum"));
             // Set notification text based on lap type
@@ -327,7 +334,7 @@ impl SolanumWindow {
             let app = self.application();
             app.send_notification(Some("timer-notif"), &notif);
         }
-        self.play_sound(CHIME_URI);
+        self.play_sound(if settings.boolean("switch-timer-sounds") {KITCHEN_CHIME_URI} else {DEFAULT_CHIME_URI});
     }
 
     fn update_lap_label(&self) {
