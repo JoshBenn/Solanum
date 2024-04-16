@@ -51,5 +51,15 @@ template $SolanumPreferencesWindow : Adw.PreferencesWindow {
         };
       }
     }
+
+    Adw.PreferencesGroup {
+      title: _("Misc Preferences");
+      description: _("Other timer options");
+
+      Adw.SwitchRow switch_timer_sounds {
+        title: _("Kitchen Timer Sounds");
+      }
+    }
+
   }
 }

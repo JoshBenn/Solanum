@@ -39,6 +39,7 @@ use crate::timer::Timer;
 
 static CHIME_URI: &str = "resource:///org/gnome/Solanum/chime.ogg";
 static BEEP_URI: &str = "resource:///org/gnome/Solanum/beep.ogg";
+static KITCHEN_TIMER: &str = "";
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Enum)]
 #[enum_type(name = "SolanumLapType")]
@@ -198,6 +199,13 @@ impl SolanumWindow {
         let imp = self.imp();
         let label = &*imp.timer_label;
         label.set_label(&format!("{:>02}∶{:>02}", min, sec));
+
+        let app = self.application();
+        let settings = app.gsettings();                                                      // <----- Make this better
+        if settings.boolean("switch_timer_sounds") {
+            self.play_sound(KITCHEN_TIMER);                                                  // Add the ticking sound
+        }
+
         glib::ControlFlow::Continue
     }
 
@@ -353,3 +361,4 @@ impl SolanumWindow {
         }
     }
 }
+

@@ -39,6 +39,9 @@ mod imp {
         pub long_break_spin: TemplateChild<libadwaita::SpinRow>,
         #[template_child]
         pub session_count_spin: TemplateChild<libadwaita::SpinRow>,
+        #[template_child]
+        pub switch_timer_sounds: TemplateChild<libadwaita::SwitchRow>,
+
         pub settings: OnceCell<gio::Settings>,
     }
 
