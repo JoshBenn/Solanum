@@ -192,7 +192,7 @@ impl SolanumWindow {
 
         imp.timer.connect_countdown_update(
             clone!(@weak self as win => move |_, minutes, seconds| {
-                win.update_countdown(minutes, seconds);
+                win.update_countdown(minutes, seconds, min);
             }),
         );
 
@@ -202,13 +202,15 @@ impl SolanumWindow {
         }));
     }
 
-    fn update_countdown(&self, min: u32, sec: u32) -> glib::ControlFlow {
+    fn update_countdown(&self, min: u32, sec: u32, max_time: u32) -> glib::ControlFlow {
         let imp = self.imp();
         let label = &*imp.timer_label;
         label.set_label(&format!("{:>02}∶{:>02}", min, sec));
         let uri = imp.player.uri().unwrap_or_default();
+        let lap_len_seconds = max_time * 60;
+        let remaining_time = (min * 60) + sec;
 
-        if uri == NOTHING || (unsafe { TIMESTAMP != sec } && sec == 58)  {   // <----- Make this better
+        if uri == NOTHING || (unsafe { TIMESTAMP != min } && (lap_len_seconds - remaining_time) >= 2) {   // <----- Make this better
             let app = self.application();
             let settings = app.gsettings();
             if settings.boolean("switch-timer-sounds") {
@@ -216,7 +218,7 @@ impl SolanumWindow {
                 println!("Playing sound");
                 println!("{:?}", imp.player.position());
                 unsafe {
-                    TIMESTAMP = sec
+                    TIMESTAMP = min;
                 }
             }
         }
