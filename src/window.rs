@@ -43,6 +43,8 @@ static KITCHEN_TIMER: &str = "resource:///org/gnome/Solanum/kitchen_timer_tick_5
 static KITCHEN_BEEP_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_start.ogg";
 static KITCHEN_CHIME_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_ring.ogg";
 
+static mut GLOBAL: u32 = 0;
+
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Enum)]
 #[enum_type(name = "SolanumLapType")]
@@ -67,6 +69,8 @@ mod imp {
         pub timer: Timer,
         pub player: gstreamer_play::Play,
         pub lap_type: Cell<LapType>,
+        pub timeout: bool,
+        pub timestamp: u32,
 
         #[template_child]
         pub lap_label: TemplateChild<gtk::Label>,
@@ -94,6 +98,8 @@ mod imp {
                 timer_label: TemplateChild::default(),
                 timer_button: TemplateChild::default(),
                 menu_button: TemplateChild::default(),
+                timeout: false,
+                timestamp: 0,
             }
         }
 
@@ -202,11 +208,17 @@ impl SolanumWindow {
         let imp = self.imp();
         let label = &*imp.timer_label;
         label.set_label(&format!("{:>02}∶{:>02}", min, sec));
-
-        let app = self.application();
-        let settings = app.gsettings();                                                      // <----- Make this better
-        if settings.boolean("switch-timer-sounds") && sec % 5 == 0 {
-            self.play_sound(KITCHEN_TIMER);                                                  // Add the ticking sound
+                                                   // <----- Make this better
+        if unsafe { GLOBAL != sec } && sec % 5 == 3  {
+            let app = self.application();
+            let settings = app.gsettings();
+            if settings.boolean("switch-timer-sounds") {
+                self.play_sound(KITCHEN_TIMER);
+                println!("Playing sound");
+                unsafe {
+                    GLOBAL = sec
+                }
+            }                                            // Add the ticking sound
         }
 
         glib::ControlFlow::Continue
