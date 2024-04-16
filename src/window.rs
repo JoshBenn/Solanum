@@ -39,7 +39,7 @@ use crate::timer::Timer;
 
 static DEFAULT_CHIME_URI: &str = "resource:///org/gnome/Solanum/chime.ogg";
 static DEFAULT_BEEP_URI: &str = "resource:///org/gnome/Solanum/beep.ogg";
-static KITCHEN_TIMER: &str = "resource:///org/gnome/Solanum/kitchen_timer_tick_5s.ogg";
+static KITCHEN_TIMER: &str = "resource:///org/gnome/Solanum/kitchen_timer_tick.ogg";
 static KITCHEN_BEEP_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_start.ogg";
 static KITCHEN_CHIME_URI: &str = "resource:///org/gnome/Solanum/kitchen_timer_ring.ogg";
 static NOTHING: &str = "resource:///org/gnome/Solanum/nothing.ogg";
@@ -208,7 +208,7 @@ impl SolanumWindow {
         label.set_label(&format!("{:>02}∶{:>02}", min, sec));
         let uri = imp.player.uri().unwrap_or_default();
 
-        if uri == NOTHING || (unsafe { TIMESTAMP != sec } && sec % 5 == 3)  {   // <----- Make this better
+        if uri == NOTHING || (unsafe { TIMESTAMP != sec } && sec == 58)  {   // <----- Make this better
             let app = self.application();
             let settings = app.gsettings();
             if settings.boolean("switch-timer-sounds") {
