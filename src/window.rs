@@ -48,6 +48,7 @@ static NOTHING: &str = "resource:///org/gnome/Solanum/nothing.ogg";
 static mut TIMESTAMP: u32 = 0;
 
 
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Enum)]
 #[enum_type(name = "SolanumLapType")]
 pub enum LapType {
@@ -71,6 +72,11 @@ mod imp {
         pub timer: Timer,
         pub player: gstreamer_play::Play,
         pub lap_type: Cell<LapType>,
+        pub chime_duration: u32,
+        pub tick_duration: u32,
+        pub beep_duration: u32,
+        pub kchime_duration: u32,
+        pub kbeep_duration: u32,
 
         #[template_child]
         pub lap_label: TemplateChild<gtk::Label>,
@@ -89,16 +95,48 @@ mod imp {
         type ParentType = libadwaita::ApplicationWindow;
 
         fn new() -> Self {
-            Self {
+            let player = gstreamer_play::Play::new(None::<gstreamer_play::PlayVideoRenderer>);
+            player.set_mute(true);
+
+            player.set_uri(Some(DEFAULT_CHIME_URI));
+            player.play();
+            println!("{:#?}", player.duration());
+            let chime_duration = player.duration().unwrap_or_default().seconds() as u32;
+            player.set_uri(Some(DEFAULT_BEEP_URI));
+            player.play();
+            let beep_duration = player.duration().unwrap_or_default().seconds() as u32;
+            player.set_uri(Some(KITCHEN_CHIME_URI));
+            player.play();
+            let kchime_duration = player.duration().unwrap_or_default().seconds() as u32;
+            player.set_uri(Some(KITCHEN_BEEP_URI));
+            player.play();
+            let kbeep_duration = player.duration().unwrap_or_default().seconds() as u32;
+            player.set_uri(Some(KITCHEN_TIMER));
+            player.play();
+            let tick_duration = player.duration().unwrap_or_default().seconds() as u32;
+            player.stop();
+
+
+            player.set_mute(false);
+
+
+            let s = Self {
                 pomodoro_count: Cell::new(1),
                 timer: Timer::new(),
-                player: gstreamer_play::Play::new(None::<gstreamer_play::PlayVideoRenderer>),
+                player,
                 lap_type: Default::default(),
                 lap_label: TemplateChild::default(),
                 timer_label: TemplateChild::default(),
                 timer_button: TemplateChild::default(),
                 menu_button: TemplateChild::default(),
-            }
+                chime_duration,
+                tick_duration,
+                beep_duration,
+                kchime_duration,
+                kbeep_duration,
+            };
+            println!("{:#?}", s);
+            return s;
         }
 
         fn class_init(klass: &mut Self::Class) {
@@ -207,10 +245,12 @@ impl SolanumWindow {
         let label = &*imp.timer_label;
         label.set_label(&format!("{:>02}∶{:>02}", min, sec));
         let uri = imp.player.uri().unwrap_or_default();
-        let lap_len_seconds = max_time * 60;
+
+        let total_lap_duration = max_time * 60;
         let remaining_time = (min * 60) + sec;
 
-        if uri == NOTHING || (unsafe { TIMESTAMP != min } && (lap_len_seconds - remaining_time) >= 2) {   // <----- Make this better
+        if uri == NOTHING || (unsafe { TIMESTAMP != min }
+            && ((total_lap_duration - remaining_time) >= imp.chime_duration)) {   // <----- Make this better
             let app = self.application();
             let settings = app.gsettings();
             if settings.boolean("switch-timer-sounds") {
